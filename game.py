@@ -38,7 +38,8 @@ class Grid:
                       line_thickness)
 
   def render_number(self, value, row, col, user_input):
-    font = pygame.font.Font(pygame.font.get_default_font(), 40)
+    font_size = int(self.cell_size * 40 // 60)
+    font = pygame.font.Font(pygame.font.get_default_font(), font_size)
 
     color = user_input_color if user_input == True else original_element_color
 
@@ -48,8 +49,8 @@ class Grid:
     cell_padding_top = self.cell_size * 13 / 60
 
     self.window.blit(value_render,
-                     (self.padding + 15 + (self.cell_size * col),
-                      self.padding + 10 + (self.cell_size * row)))
+                     (self.padding + cell_padding_left + (self.cell_size * col),
+                     self.padding + cell_padding_top + (self.cell_size * row)))
 
   def draw_board_state(self):
     for i in range(9):
