@@ -116,8 +116,8 @@ class Grid:
 
   def draw(self):
     self.draw_empty_grid()
-    self.draw_board_state()
     self.highlight_selected_cell()
+    self.draw_board_state()
 
   def select_cell(self, mouse_position):
     row = int((mouse_position[1] - self.padding) // self.cell_size)
@@ -125,15 +125,45 @@ class Grid:
 
     if (row, col) == self.selected_cell:
       self.selected_cell = None
-    elif self.initial_board[row][col] == 0:
-      self.selected_cell = (row, col)
+      return
+    #elif self.initial_board[row][col] == 0:
+    
+    self.selected_cell = (row, col)
 
   def type(self, value):
-    if self.selected_cell == None or (value < 0 or value > 9):
+    # invalid values
+    if value < 0 or value > 9:
+      return
+
+    # selected cell was on the initial state (fetched from the API)
+    if self.initial_board[self.selected_cell[0]][self.selected_cell[1]] != 0:
       return
 
     self.board_state[self.selected_cell[0]][self.selected_cell[1]] = value
 
+  def move_selection(self, direction):
+    if self.selected_cell == None:
+      self.selected_cell = (0, 0)
+      return
+
+    if direction == 0: # right
+      self.selected_cell = (self.selected_cell[0], self.selected_cell[1] + 1)
+    elif direction == 1: # left
+      self.selected_cell = (self.selected_cell[0], self.selected_cell[1] - 1)
+    elif direction == 2: # down
+      self.selected_cell = (self.selected_cell[0] + 1, self.selected_cell[1])
+    elif direction == 3: # up
+      self.selected_cell = (self.selected_cell[0] - 1, self.selected_cell[1])
+
+    if self.selected_cell[0] < 0:
+      self.selected_cell = (0, self.selected_cell[1])
+    elif self.selected_cell[0] > 8:
+      self.selected_cell = (8, self.selected_cell[1])
+
+    if self.selected_cell[1] < 0:
+      self.selected_cell = (self.selected_cell[0], 0)
+    elif self.selected_cell[1] > 8:
+      self.selected_cell = (self.selected_cell[0], 8)
 
 """ class Cube:
   def __init__(self, value, row, col):
@@ -161,14 +191,21 @@ def main():
         grid.select_cell(pygame.mouse.get_pos())
         update_view = True
       if event.type == pygame.KEYDOWN:
-        print(event.key)
-
-        if event.key == 8 or event.key == 127:
-          value = 0
+        if (
+            event.key == 1073741903 or # right arrow
+            event.key == 1073741904 or # left arrow
+            event.key == 1073741905 or # down arrow
+            event.key == 1073741906    # up arrow
+           ):
+          grid.move_selection(event.key - 1073741903)
         else:
-          value = event.key - 48
+          if event.key == 8 or event.key == 127:
+            value = 0
+          else:
+            value = event.key - 48
 
-        grid.type(value)
+          grid.type(value)
+
         update_view = True
       if event.type == pygame.QUIT:
         pygame.quit()
