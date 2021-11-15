@@ -88,6 +88,12 @@ class Grid:
     elif self.initial_board[row][col] == 0:
       self.selected_cell = (row, col)
 
+  def type(self, value):
+    if self.selected_cell == None or (value < 0 or value > 9):
+      return
+
+    self.board_state[self.selected_cell[0]][self.selected_cell[1]] = value
+
 
 """ class Cube:
   def __init__(self, value, row, col):
@@ -109,11 +115,18 @@ def main():
 
   while True:
     for event in pygame.event.get():
+      if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+        grid.select_cell(pygame.mouse.get_pos())
+      if event.type == pygame.KEYDOWN:
+        if event.key == 8 or event.key == 127:
+          value = 0
+        else:
+          value = event.key - 48
+
+        grid.type(value)
       if event.type == pygame.QUIT:
         pygame.quit()
         return
-      if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-        grid.select_cell(pygame.mouse.get_pos())
 
       window.fill(background_color)
       grid.draw()
