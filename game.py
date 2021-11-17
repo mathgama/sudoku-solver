@@ -1,6 +1,7 @@
 import pygame
 from pygame.display import update
 import requests
+import datetime
 
 background_color = (255, 255, 255)
 original_element_color = (90, 100, 249)
@@ -39,34 +40,53 @@ class Grid:
                       (self.width - self.padding, self.padding + self.cell_size * i), 
                       line_thickness)
 
-  def is_input_valid(self, value, row, col):
-    #print('board', self.board_state)
+  def find_next_empty_cell(self):
+    for i in range(9):
+      for j in range(9):
+        if self.board_state[i][j] == 0:
+          return i, j
 
+    return None, None
+
+  def solve(self):
+    row, col = self.find_next_empty_cell()
+
+    if (row, col) == (None, None):
+      return True
+
+    for number in range(1, 10):
+      if self.is_input_valid(number, row, col):        
+        self.board_state[row][col] = number
+
+        """ self.window.fill(background_color)
+        self.draw()
+        pygame.display.update() """
+
+        if self.solve():
+          return True
+
+    self.board_state[row][col] = 0
+    return False
+
+  def is_input_valid(self, value, row, col):
     # check for the same row
     for j in range(9):
       if j != col and self.board_state[row][j] == value:
-        #print('row', row, 'col', j, 'value', self.board_state[row][j])
         return False
-
-    #print('row ok')
 
     # check for the same column
     for i in range(9):
       if i != row and self.board_state[i][col] == value:
         return False
 
-    #print('col ok')
-
     # check for the same block
     block_x_start = (row // 3) * 3
     block_y_start = (col // 3) * 3
 
-    for i in range(block_x_start, block_x_start + 2):
-      for j in range(block_y_start, block_y_start + 2):
+    for i in range(block_x_start, block_x_start + 3):
+      for j in range(block_y_start, block_y_start + 3):
         if (i, j) != (row, col) and self.board_state[i][j] == value:
           return False
-
-    #print('block ok')
 
     return True
 
@@ -191,7 +211,13 @@ def main():
         grid.select_cell(pygame.mouse.get_pos())
         update_view = True
       if event.type == pygame.KEYDOWN:
-        if (
+        if event.key == 1073741882:
+          start = datetime.datetime.now()
+          grid.solve()
+          end = datetime.datetime.now()
+          print('Time to solve:', end - start)
+          update_view = True
+        elif (
             event.key == 1073741903 or # right arrow
             event.key == 1073741904 or # left arrow
             event.key == 1073741905 or # down arrow
