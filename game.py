@@ -1,5 +1,4 @@
 import pygame
-from pygame.display import update
 import requests
 import datetime
 
@@ -146,7 +145,6 @@ class Grid:
     if (row, col) == self.selected_cell:
       self.selected_cell = None
       return
-    #elif self.initial_board[row][col] == 0:
     
     self.selected_cell = (row, col)
 
