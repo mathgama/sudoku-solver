@@ -1,5 +1,6 @@
 import cv2
 import numpy
+import pytesseract
 
 class ImageReader:
   def __init__(self, imgPath):
@@ -13,6 +14,26 @@ class ImageReader:
     contours = self.find_contours(image_threshold)
     biggest_contour = self.find_biggest_contour(contours)
     board = self.crop_board(resized_image, biggest_contour)
+    cells = self.crop_cells(board)
+
+    board_state = []
+
+    for cell in cells:
+      cell = numpy.asarray(cell)
+      cell = cell[4:cell.shape[0] - 4, 4:cell.shape[1] -4]
+      
+      img = cv2.resize(cell, (0, 0), fx=2, fy=2)
+      thr = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+      blr = cv2.GaussianBlur(thr, (3, 3), 0)
+      #cv2.imshow("Cell", cell)
+      #cv2.waitKey(0)
+      value = pytesseract.image_to_string(blr, config='--psm 10 --oem 3 -c tessedit_char_whitelist=0123456789')
+
+      value = value[:1]
+      if value not in '0123456789':
+        value = '0'
+
+      board_state.append(value)
 
     return board
 
@@ -72,8 +93,17 @@ class ImageReader:
       imgWarpGray = cv2.cvtColor(imgWarpColored,cv2.COLOR_BGR2GRAY)
       return imgWarpGray
 
+  def crop_cells(self, image):
+    rows = numpy.vsplit(image, 9)
+    cells = []
+
+    for row in rows:
+        cells += numpy.hsplit(row, 9)
+
+    return cells
+
 reader = ImageReader('img/1.jpg')
 board = reader.fetch_board_state()
 
-cv2.imshow("Image Warp", board)
-cv2.waitKey(0)
+""" cv2.imshow("Image Warp", board)
+cv2.waitKey(0) """
