@@ -18,7 +18,7 @@ class Grid:
     self.cell_size = (self.width - (2 * self.padding)) / 9
     self.selected_cell = None
 
-    if initial_board.any():
+    if len(initial_board) > 0:
       self.initial_board = initial_board
     else:
       self.initial_board = requests.get('https://sugoku.herokuapp.com/board?difficulty=easy').json()['board']
