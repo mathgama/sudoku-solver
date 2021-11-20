@@ -3,10 +3,10 @@ import numpy as np
 import pytesseract
 
 class ImageReader:
-  def __init__(self, imgPath):
+  def __init__(self, img_path):
     self.imgWidth = 450
     self.imgHeight = 450
-    self.original_image = cv2.imread(imgPath)
+    self.original_image = cv2.imread(img_path)
 
   def fetch_board_state(self):
     resized_image = self.resize_image(self.original_image)
@@ -95,9 +95,10 @@ class ImageReader:
       blr = cv2.GaussianBlur(thr, (3, 3), 0)
       value = pytesseract.image_to_string(blr, config='--psm 10 --oem 3 -c tessedit_char_whitelist=0123456789')
 
-      value = value[:1]
-      if value not in '0123456789':
-        value = '0'
+      try:
+        value = int(value[:1])
+      except:
+        value = 0
 
       board_state.append(value)
     

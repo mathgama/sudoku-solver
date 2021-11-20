@@ -1,6 +1,9 @@
+import sys
+import getopt
 import pygame
 import requests
 import datetime
+from image_recognition import ImageReader
 
 background_color = (255, 255, 255)
 original_element_color = (90, 100, 249)
@@ -8,15 +11,19 @@ user_input_color = (0, 0, 0)
 error_input_color = (255, 0, 0)
 
 class Grid:
-  def __init__(self, padding, window):
+  def __init__(self, padding, window, initial_board=[]):
     self.window = window
     self.width = window.get_size()[0]
     self.padding = padding
     self.cell_size = (self.width - (2 * self.padding)) / 9
-    self.initial_board = requests.get('https://sugoku.herokuapp.com/board?difficulty=easy').json()['board']
-    self.board_state = [[self.initial_board[i][j] for j in range(9)] for i in range(9)]
     self.selected_cell = None
-    #self.cubes = [[Cube(self.board[i][j], i, j) for j in range(9)] for i in range(9)]
+
+    if initial_board.any():
+      self.initial_board = initial_board
+    else:
+      self.initial_board = requests.get('https://sugoku.herokuapp.com/board?difficulty=easy').json()['board']
+
+    self.board_state = [[self.initial_board[i][j] for j in range(9)] for i in range(9)]
 
   def draw_empty_grid(self):
     for i in range(10):
@@ -192,10 +199,26 @@ class Grid:
 
 def main():
   pygame.init()
-  pygame.display.set_caption('Sudoku Game')
+  pygame.display.set_caption("Sudoku Game")
+
+  initial_board = []
+
+  try:
+    opts, args = getopt.getopt(sys.argv[1:],"hi:",["image="])
+  except getopt.GetoptError:
+    print("game.py -i <image_path>")
+    sys.exit(2)
+  for opt, arg in opts:
+    if opt == '-h':
+      print("game.py -i <image_path>")
+      sys.exit()
+    elif opt in ("-i", "--image"):
+      img_path = arg
+      image_reader = ImageReader(img_path)
+      initial_board = image_reader.fetch_board_state()
 
   window = pygame.display.set_mode((590, 590))
-  grid = Grid(25, window)
+  grid = Grid(25, window, initial_board)
 
   window.fill(background_color)
   grid.draw()
