@@ -1,5 +1,5 @@
 import cv2
-import numpy
+import numpy as np
 import pytesseract
 
 class ImageReader:
@@ -15,38 +15,19 @@ class ImageReader:
     biggest_contour = self.find_biggest_contour(contours)
     board = self.crop_board(resized_image, biggest_contour)
     cells = self.crop_cells(board)
-
-    board_state = []
-
-    for cell in cells:
-      cell = numpy.asarray(cell)
-      cell = cell[4:cell.shape[0] - 4, 4:cell.shape[1] -4]
-      
-      img = cv2.resize(cell, (0, 0), fx=2, fy=2)
-      thr = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-      blr = cv2.GaussianBlur(thr, (3, 3), 0)
-      #cv2.imshow("Cell", cell)
-      #cv2.waitKey(0)
-      value = pytesseract.image_to_string(blr, config='--psm 10 --oem 3 -c tessedit_char_whitelist=0123456789')
-
-      value = value[:1]
-      if value not in '0123456789':
-        value = '0'
-
-      board_state.append(value)
-
-    return board
+    board_state = self.recognize_board_state(cells)
+    return board_state
 
   def reorder_corner_points(self, corners):
     corners = corners.reshape((4, 2))
-    sum = numpy.sum(corners, axis=1)
-    diff = numpy.diff(corners, axis=1)
+    sum = np.sum(corners, axis=1)
+    diff = np.diff(corners, axis=1)
 
-    ordered_corners = numpy.zeros((4, 1, 2), dtype=numpy.int32)
-    ordered_corners[0] = corners[numpy.argmin(sum)] # top-left
-    ordered_corners[3] = corners[numpy.argmax(sum)] # bottom-right
-    ordered_corners[1] = corners[numpy.argmin(diff)] # top-right
-    ordered_corners[2] = corners[numpy.argmax(diff)] # bottom-left
+    ordered_corners = np.zeros((4, 1, 2), dtype=np.int32)
+    ordered_corners[0] = corners[np.argmin(sum)] # top-left
+    ordered_corners[3] = corners[np.argmax(sum)] # bottom-right
+    ordered_corners[1] = corners[np.argmin(diff)] # top-right
+    ordered_corners[2] = corners[np.argmax(diff)] # bottom-left
     return ordered_corners
 
   def resize_image(self, image):
@@ -62,7 +43,7 @@ class ImageReader:
     return contours
 
   def find_biggest_contour(self, contours):
-    biggest = numpy.array([])
+    biggest = np.array([])
     max_area = 0
 
     for i in contours:
@@ -82,8 +63,8 @@ class ImageReader:
     if contour.size != 0:
       contour = self.reorder_corner_points(contour)
       
-      pts1 = numpy.float32(contour)
-      pts2 = numpy.float32([[0, 0], 
+      pts1 = np.float32(contour)
+      pts2 = np.float32([[0, 0], 
                             [self.imgWidth, 0], 
                             [0, self.imgHeight],
                             [self.imgWidth, self.imgHeight]])
@@ -94,16 +75,35 @@ class ImageReader:
       return imgWarpGray
 
   def crop_cells(self, image):
-    rows = numpy.vsplit(image, 9)
+    rows = np.vsplit(image, 9)
     cells = []
 
     for row in rows:
-        cells += numpy.hsplit(row, 9)
+        cells += np.hsplit(row, 9)
 
     return cells
 
-reader = ImageReader('img/1.jpg')
-board = reader.fetch_board_state()
+  def recognize_board_state(self, cells):
+    board_state = []
 
-""" cv2.imshow("Image Warp", board)
-cv2.waitKey(0) """
+    for cell in cells:
+      cell = np.asarray(cell)
+      img = cell[4:cell.shape[0] - 4, 4:cell.shape[1] -4]
+  
+      rsz = cv2.resize(img, (0, 0), fx=2, fy=2)
+      thr = cv2.threshold(rsz, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+      blr = cv2.GaussianBlur(thr, (3, 3), 0)
+      value = pytesseract.image_to_string(blr, config='--psm 10 --oem 3 -c tessedit_char_whitelist=0123456789')
+
+      value = value[:1]
+      if value not in '0123456789':
+        value = '0'
+
+      board_state.append(value)
+    
+    board_state = np.array(board_state).reshape(9, 9)
+    return board_state
+
+""" reader = ImageReader('img/1.jpg')
+board_state = reader.fetch_board_state()
+print(board_state) """
